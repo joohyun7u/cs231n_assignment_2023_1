@@ -25,6 +25,7 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    out = np.dot(x.reshape(x.shape[0],-1),w) + b
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -57,6 +58,9 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    dx = np.dot(dout,w.T).reshape(x.shape)
+    dw = np.dot(x.reshape(x.shape[0],-1).T,dout)
+    db = np.dot(dout.T,np.ones(x.shape[0]))
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -82,6 +86,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    out = np.maximum(0, x)
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -108,6 +113,9 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    dr = np.zeros(x.shape)
+    dr[x>0] = 1
+    dx = dout*dr
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -137,6 +145,12 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    num_train = x.shape[0]
+    x = x - np.max(x,axis=1,keepdims=True)
+    p_all = np.exp(x) / np.sum(np.exp(x),axis=1,keepdims=True)
+    loss = np.mean(-np.log(p_all[np.arange(p_all.shape[0]),y]))
+    p_all[np.arange(p_all.shape[0]),y] -=1
+    dx = p_all/num_train
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****

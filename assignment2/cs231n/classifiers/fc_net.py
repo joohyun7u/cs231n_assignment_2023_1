@@ -75,10 +75,9 @@ class FullyConnectedNet(object):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         for layer, (input, output) in enumerate(zip([input_dim, *hidden_dims], [*hidden_dims, num_classes])):
-            self.params['W'+str(layer+1)] = weight_scale * \
-                np.random.randn(input, output)
+            self.params['W'+str(layer+1)] = weight_scale * np.random.randn(input, output)
             self.params['b'+str(layer+1)] = np.zeros(output)
-            if self.normalization:
+            if self.normalization and layer < self.num_layers-1:
                 self.params['gamma'+str(layer+1)] = np.ones(output)
                 self.params['bata'+str(layer+1)] = np.zeros(output)
         pass
@@ -104,8 +103,7 @@ class FullyConnectedNet(object):
         # pass of the second batch normalization layer, etc.
         self.bn_params = []
         if self.normalization == "batchnorm":
-            self.bn_params = [{"mode": "train"}
-                              for i in range(self.num_layers - 1)]
+            self.bn_params = [{"mode": "train"} for i in range(self.num_layers - 1)]
         if self.normalization == "layernorm":
             self.bn_params = [{} for i in range(self.num_layers - 1)]
 
@@ -157,31 +155,45 @@ class FullyConnectedNet(object):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         # {affine - [batch/layer norm] - relu - [dropout]} x (L - 1) - affine - softmax
-        caches = []
-        for layer in self.num_layers-1:
+        caches = {}
+        out = X
+        for layer in range(self.num_layers-1):
             n_cache, drop_cache = None, None
-            out, cache = affine_forward(
-                X, self.params['W'+str(layer+1)], self.params['b'+str(layer+1)])
+            out, cache = affine_forward(out, self.params['W'+str(layer+1)], self.params['b'+str(layer+1)])
+            caches[f'affine{layer+1}'] = cache
             if self.normalization == "batchnorm":
-                out, n_cache = batchnorm_forward(
-                    out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
+                out, n_cache = batchnorm_forward( out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
+                caches[f'normalization{layer+1}'] = n_cache
             if self.normalization == "layernorm":
-                out, n_cache = layernorm_forward(
-                    out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
+                out, n_cache = layernorm_forward(out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
+                caches[f'normalization{layer+1}'] = n_cache
             out, relu_cache = relu_forward(out)
+            caches[f'relu{layer+1}'] = relu_cache
             if self.use_dropout:
-                out, drop_cache = dropout_forward(
-                    out, self.dropout_param['mode'])
-            caches.append([cache, relu_cache, n_cache, drop_cache])
-        scores, cache2 = affine_forward(
-            X, self.params['W'+str(self.num_layer)], self.params['b'+str(self.num_layer)])
+                out, drop_cache = dropout_forward(out, self.dropout_param)
+                caches[f'dropout{layer+1}'] = drop_cache
+        scores, last_cache = affine_forward(out, self.params['W'+str(self.num_layers)], self.params['b'+str(self.num_layers)])
         pass
-
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
 
+        # caches = []
+        # out = X
+        # for layer in range(self.num_layers-1):
+        #     n_cache, drop_cache = None, None
+        #     out, cache = affine_forward(out, self.params['W'+str(layer+1)], self.params['b'+str(layer+1)])
+        #     if self.normalization == "batchnorm":
+        #         out, n_cache = batchnorm_forward( out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
+        #     if self.normalization == "layernorm":
+        #         out, n_cache = layernorm_forward(out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
+        #     out, relu_cache = relu_forward(out)
+        #     if self.use_dropout:
+        #         out, drop_cache = dropout_forward(out, self.dropout_param)
+        #     caches.append([cache, relu_cache, n_cache, drop_cache])
+        # scores, last_cache = affine_forward(out, self.params['W'+str(self.num_layers)], self.params['b'+str(self.num_layers)])
+        
         # If test mode return early.
         if mode == "test":
             return scores
@@ -202,6 +214,26 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        loss, dout = softmax_loss(scores,y)
+        dout, dW, db = affine_backward(dout, last_cache)
+        grads['W'+str(self.num_layers)] = dW + self.reg*self.params['W'+str(self.num_layers)]
+        grads['b'+str(self.num_layers)] = db
+        for layer in reversed(range(self.num_layers-1)):
+            if self.use_dropout:
+                dout = dropout_backward(dout,caches[f'dropout{layer+1}'])
+            dout = relu_backward(dout,caches[f'relu{layer+1}'])
+            if self.normalization == "batchnorm":
+                dout, dgamma, dbeta = batchnorm_backward(dout,caches[f'normalization{layer+1}'])
+                grads['gamma'+str(layer+1)] = dgamma
+                grads['bata'+str(layer+1)] = dbeta
+            if self.normalization == "layernorm":
+                dout, dgamma, dbeta = layernorm_backward(dout,caches[f'normalization{layer+1}'])
+                grads['gamma'+str(layer+1)] = dgamma
+                grads['bata'+str(layer+1)] = dbeta
+            dout, dW, db = affine_backward(dout, caches[f'affine{layer+1}'])
+            grads['W'+str(layer+1)] = dW + self.reg*self.params['W'+str(layer+1)]
+            grads['b'+str(layer+1)] = db
+        loss += 0.5*self.reg * (np.sum([np.sum(self.params['W'+str(layer+1)] ** 2) for layer in range(self.num_layers)])) # NOTE 에서 0.5 처리요청함
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -209,4 +241,27 @@ class FullyConnectedNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
+        
+        # loss, dout = softmax_loss(scores,y)
+        # dz, dW, db = affine_backward(dout, last_cache)
+        # grads['W'+str(self.num_layers)] = dW + self.reg*self.params['W'+str(self.num_layers)]
+        # grads['b'+str(self.num_layers)] = db
+        # for layer in reversed(range(self.num_layers-1)):
+        #     cache = caches.pop()
+        #     if self.use_dropout:
+        #         dz = dropout_backward(dz,cache[3])
+        #     dz = relu_backward(dz,cache[1])
+        #     if self.normalization == "batchnorm":
+        #         dz, dgamma, dbeta = batchnorm_backward(dz,cache[2])
+        #         grads['gamma'+str(layer+1)] = dgamma
+        #         grads['bata'+str(layer+1)] = dbeta
+        #     if self.normalization == "layernorm":
+        #         dz, dgamma, dbeta = layernorm_backward(dz,cache[2])
+        #         grads['gamma'+str(layer+1)] = dgamma
+        #         grads['bata'+str(layer+1)] = dbeta
+        #     dz, dW, db = affine_backward(dz, cache[0])
+        #     grads['W'+str(layer+1)] = dW + self.reg*self.params['W'+str(layer+1)]
+        #     grads['b'+str(layer+1)] = db
+        # loss += 0.5*self.reg * (np.sum([np.sum(self.params['W'+str(layer+1)] ** 2) for layer in range(self.num_layers)])) # NOTE 에서 0.5 처리요청함
+        # pass
         return loss, grads

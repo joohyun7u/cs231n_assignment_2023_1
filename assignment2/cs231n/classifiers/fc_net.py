@@ -174,25 +174,11 @@ class FullyConnectedNet(object):
                 caches[f'dropout{layer+1}'] = drop_cache
         scores, last_cache = affine_forward(out, self.params['W'+str(self.num_layers)], self.params['b'+str(self.num_layers)])
         pass
+    
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
-        # caches = []
-        # out = X
-        # for layer in range(self.num_layers-1):
-        #     n_cache, drop_cache = None, None
-        #     out, cache = affine_forward(out, self.params['W'+str(layer+1)], self.params['b'+str(layer+1)])
-        #     if self.normalization == "batchnorm":
-        #         out, n_cache = batchnorm_forward( out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
-        #     if self.normalization == "layernorm":
-        #         out, n_cache = layernorm_forward(out, self.params['gamma'+str(layer+1)], self.params['bata'+str(layer+1)], self.bn_params[layer])
-        #     out, relu_cache = relu_forward(out)
-        #     if self.use_dropout:
-        #         out, drop_cache = dropout_forward(out, self.dropout_param)
-        #     caches.append([cache, relu_cache, n_cache, drop_cache])
-        # scores, last_cache = affine_forward(out, self.params['W'+str(self.num_layers)], self.params['b'+str(self.num_layers)])
         
         # If test mode return early.
         if mode == "test":
@@ -241,27 +227,4 @@ class FullyConnectedNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
-        
-        # loss, dout = softmax_loss(scores,y)
-        # dz, dW, db = affine_backward(dout, last_cache)
-        # grads['W'+str(self.num_layers)] = dW + self.reg*self.params['W'+str(self.num_layers)]
-        # grads['b'+str(self.num_layers)] = db
-        # for layer in reversed(range(self.num_layers-1)):
-        #     cache = caches.pop()
-        #     if self.use_dropout:
-        #         dz = dropout_backward(dz,cache[3])
-        #     dz = relu_backward(dz,cache[1])
-        #     if self.normalization == "batchnorm":
-        #         dz, dgamma, dbeta = batchnorm_backward(dz,cache[2])
-        #         grads['gamma'+str(layer+1)] = dgamma
-        #         grads['bata'+str(layer+1)] = dbeta
-        #     if self.normalization == "layernorm":
-        #         dz, dgamma, dbeta = layernorm_backward(dz,cache[2])
-        #         grads['gamma'+str(layer+1)] = dgamma
-        #         grads['bata'+str(layer+1)] = dbeta
-        #     dz, dW, db = affine_backward(dz, cache[0])
-        #     grads['W'+str(layer+1)] = dW + self.reg*self.params['W'+str(layer+1)]
-        #     grads['b'+str(layer+1)] = db
-        # loss += 0.5*self.reg * (np.sum([np.sum(self.params['W'+str(layer+1)] ** 2) for layer in range(self.num_layers)])) # NOTE 에서 0.5 처리요청함
-        # pass
         return loss, grads

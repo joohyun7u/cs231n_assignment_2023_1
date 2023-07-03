@@ -69,6 +69,8 @@ def sgd_momentum(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    v = config["momentum"] * v - config["learning_rate"] * dw
+    next_w = v + w
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -107,6 +109,9 @@ def rmsprop(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    gs = config["decay_rate"] * config["cache"] + (1 - config["decay_rate"]) * dw * dw
+    next_w = w - config["learning_rate"] * dw / (np.sqrt(gs) + config["epsilon"])
+    config["cache"] = gs
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -152,6 +157,14 @@ def adam(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    lr ,beta1, beta2, eps, m, v, t = config["learning_rate"], config["beta1"], config["beta2"], config["epsilon"], config["m"], config["v"], config["t"]
+    m = beta1 * m + (1-beta1) * dw
+    v = beta2 * v + (1-beta2) * dw**2
+    t += 1
+    first_unbias = m / (1-beta1**t)
+    second_unbias = v / (1-beta2**t)
+    next_w = w - lr * first_unbias / (np.sqrt(second_unbias) + eps)
+    config["m"], config["v"], config["t"]= m, v, t
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****

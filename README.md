@@ -8,8 +8,8 @@
     features.ipynb | Complete
 ### - Assignment2
     FullyConnectedNets.ipynb | Complete
-    BatchNormalization.ipynb 
-    Dropout.ipynb
+    BatchNormalization.ipynb | Complete (error include)
+    Dropout.ipynb | Complete
     ConvolutionalNetworks.ipynb
     PyTorch.ipynb
 ### - Assignment3

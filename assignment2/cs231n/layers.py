@@ -405,13 +405,20 @@ def layernorm_forward(x, gamma, beta, ln_param):
     # the batch norm code and leave it almost unchanged?                      #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    mean, var = np.mean(x,axis=1,keepdims=True), np.var(x,axis=1,keepdims=True)
+    
+    # mean, var = np.mean(x,axis=1,keepdims=True), np.var(x,axis=1,keepdims=True)
+    # std = np.sqrt(var + eps)
+    # x_norm = (x - mean) / std
+    # out = gamma * x_norm + beta
+    # cache = (gamma, beta, x, x_norm, mean, var, std, eps)
+    
+    x = x.T
+    mean, var = np.mean(x,axis=0), np.var(x,axis=0)
     std = np.sqrt(var + eps)
     x_norm = (x - mean) / std
+    x_norm = x_norm.T
     out = gamma * x_norm + beta
     cache = (gamma, beta, x, x_norm, mean, var, std, eps)
-    
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -446,17 +453,32 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    # gamma, beta, x, x_norm, mean, var, std, eps = cache
+    # dgamma = np.sum(dout * x_norm, axis=0)
+    # dbeta = np.sum(dout, axis=0)
+    # Sumk = lambda x: np.sum(x,axis=1,keepdims=True)
+    # # dx_norm = (1 - 1 / x.shape[0]) * 1 / np.sqrt(var + eps) + (x - mean)**2 * np.sqrt((var + eps)**3) * (1 - 1 / x.shape[0]) / x.shape[0]
+    # # print(dout * gamma * dx_norm)
+    # # dx = np.sum(dout * gamma * dx_norm, axis=0)
+    # dx_norm = dout * gamma
+    # dvar = Sumk(dx_norm * (x - mean) * -1/2 * (var + eps)**(-3/2))
+    # dmean = Sumk(dx_norm * -1 / (var + eps)**(1/2)) + dvar * Sumk(-2*(x-mean))/x.shape[0]
+    # dx = dx_norm / (var + eps)**(1/2) + dvar * 2*(x-mean)/x.shape[0] + dmean / x.shape[0]
+    
     gamma, beta, x, x_norm, mean, var, std, eps = cache
     dgamma = np.sum(dout * x_norm, axis=0)
     dbeta = np.sum(dout, axis=0)
-    Sumk = lambda x: np.sum(x,axis=1,keepdims=True)
+    Sumk = lambda x: np.sum(x,axis=0)
     # dx_norm = (1 - 1 / x.shape[0]) * 1 / np.sqrt(var + eps) + (x - mean)**2 * np.sqrt((var + eps)**3) * (1 - 1 / x.shape[0]) / x.shape[0]
     # print(dout * gamma * dx_norm)
     # dx = np.sum(dout * gamma * dx_norm, axis=0)
     dx_norm = dout * gamma
+    dout = dout.T
+    dx_norm = dx_norm.T
     dvar = Sumk(dx_norm * (x - mean) * -1/2 * (var + eps)**(-3/2))
     dmean = Sumk(dx_norm * -1 / (var + eps)**(1/2)) + dvar * Sumk(-2*(x-mean))/x.shape[0]
     dx = dx_norm / (var + eps)**(1/2) + dvar * 2*(x-mean)/x.shape[0] + dmean / x.shape[0]
+    dx = dx.T
 
     # gamma, beta, x, x_norm, mean, var, std, eps = cache
     # dgamma = np.sum(dout * x_norm, axis=0)

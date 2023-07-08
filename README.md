@@ -9,7 +9,7 @@
 ### - Assignment2
     FullyConnectedNets.ipynb | Complete
     BatchNormalization.ipynb | Complete
-    Dropout.ipynb | Complete
+    Dropout.ipynb | Complete | Complete
     ConvolutionalNetworks.ipynb
     PyTorch.ipynb
 ### - Assignment3

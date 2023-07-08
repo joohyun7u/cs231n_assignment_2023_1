@@ -814,6 +814,10 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    N,C,H,W = x.shape
+    x = x.transpose(0,2,3,1).reshape(N*H*W,C)
+    out, cache = batchnorm_forward(x, gamma, beta, bn_param)
+    out = out.reshape(N,H,W,C).transpose(0,3,1,2)
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -847,6 +851,10 @@ def spatial_batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    N,C,H,W = dout.shape
+    dout = dout.transpose(0,2,3,1).reshape(N*H*W,C)
+    dx, dgamma, dbeta = batchnorm_backward(dout, cache)
+    dx = dx.reshape(N,H,W,C).transpose(0,3,1,2)
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -888,6 +896,15 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    N, C, H, W = x.shape
+    # x = tf.reshape(x, [N, G, C // G, H, W])
+    x = x.reshape(N*G,-1).T
+    mean, var = np.mean(x,axis=0), np.var(x,axis=0)
+    std = np.sqrt(var + eps)
+    x_norm = (x - mean) / std
+    x_norm = x_norm.T.reshape(N,C,H,W)
+    out = gamma * x_norm + beta
+    cache = (gamma, beta, x, x_norm, mean, var, std, eps, G)
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -917,6 +934,19 @@ def spatial_groupnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    N, C, H, W = dout.shape
+    gamma, beta, x, x_norm, mean, var, std, eps, G = cache
+    dgamma = np.sum(dout * x_norm, axis=(0,2,3)).reshape((1, C, 1, 1))
+    dbeta = np.sum(dout, axis=(0,2,3)).reshape((1, C, 1, 1))
+    Sumk = lambda x: np.sum(x,axis=0)
+
+    dx_norm = dout * gamma
+    dout = dout.T
+    dx_norm = dx_norm.reshape(N*G,-1).T
+    dvar = Sumk(dx_norm * (x - mean) * -1/2 * (var + eps)**(-3/2))
+    dmean = Sumk(dx_norm * -1 / (var + eps)**(1/2)) + dvar * Sumk(-2*(x-mean))/x.shape[0]
+    dx = dx_norm / (var + eps)**(1/2) + dvar * 2*(x-mean)/x.shape[0] + dmean / x.shape[0]
+    dx = dx.T.reshape(N,C,H,W)
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****

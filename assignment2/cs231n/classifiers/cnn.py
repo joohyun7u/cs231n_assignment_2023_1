@@ -62,7 +62,15 @@ class ThreeLayerConvNet(object):
         # the start of the loss() function to see how that happens.                #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        
+        # conv - relu - 2x2 max pool - affine - relu - affine - softmax
+        C, H, W = input_dim
+        self.params['W1'] = weight_scale * np.random.randn(num_filters,C,filter_size,filter_size)
+        self.params['b1'] = np.zeros(num_filters)
+        self.params['W2'] = weight_scale * np.random.randn(num_filters*H*W // 4, hidden_dim)
+        self.params['b2'] = np.zeros(hidden_dim)
+        self.params['W3'] = weight_scale * np.random.randn(hidden_dim,num_classes)
+        self.params['b3'] = np.zeros(num_classes)
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -102,6 +110,11 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        # conv - relu - 2x2 max pool - affine - relu - affine - softmax
+        
+        out, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        out, cache2 = affine_relu_forward(out, W2, b2)
+        scores, cache3 = affine_forward(out, W3, b3)
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -125,6 +138,18 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        loss, dout = softmax_loss(scores, y)
+        loss += 0.5*self.reg * (np.sum(W1**2) + np.sum(W2**2) + np.sum(W3**2)) # NOTE 에서 0.5 처리요청함
+        dout, dW3, db3 = affine_backward(dout, cache3)
+        dout, dW2, db2 = affine_relu_backward(dout, cache2)
+        dout, dW1, db1 = conv_relu_pool_backward(dout, cache1)
+        
+        grads['W1'] = dW1 + self.reg*W1
+        grads['b1'] = db1
+        grads['W2'] = dW2 + self.reg*W2
+        grads['b2'] = db2
+        grads['W3'] = dW3 + self.reg*W3
+        grads['b3'] = db3
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****

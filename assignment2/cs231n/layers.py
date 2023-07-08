@@ -297,26 +297,11 @@ def batchnorm_backward(dout, cache):
     # might prove to be helpful.                                              #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    
-    # gamma, beta, x, x_norm, mean, var, std, eps = cache
-    # dgamma = np.sum(dout * x_norm, axis=0)
-    # dbeta = np.sum(dout, axis=0)
-    # # dx_norm = (1 - 1 / x.shape[0]) * 1 / np.sqrt(var + eps) + (x - mean)**2 * np.sqrt((var + eps)**3) * (1 - 1 / x.shape[0]) / x.shape[0]
-    # # print(dout * gamma * dx_norm)
-    # # dx = np.sum(dout * gamma * dx_norm, axis=0)
-    # dx_norm = dout * gamma
-    # dvar = np.sum(dx_norm * (x - mean) * -1/2 * (var + eps)**(-3/2), axis=0)
-    # dmean = np.sum(dx_norm * -1 / (var + eps)**(1/2), axis=0) + dvar * np.sum(-2*(x-mean),axis=0)/x.shape[0]
-    # dx = dx_norm / (var + eps)**(1/2) + dvar * 2*(x-mean)/x.shape[0] + dmean / x.shape[0]
     
     gamma, beta, x, x_norm, mean, var, std, eps = cache
     dgamma = np.sum(dout * x_norm, axis=0)
     dbeta = np.sum(dout, axis=0)
     Sumk = lambda x: np.sum(x,axis=0)
-    # dx_norm = (1 - 1 / x.shape[0]) * 1 / np.sqrt(var + eps) + (x - mean)**2 * np.sqrt((var + eps)**3) * (1 - 1 / x.shape[0]) / x.shape[0]
-    # print(dout * gamma * dx_norm)
-    # dx = np.sum(dout * gamma * dx_norm, axis=0)
     dx_norm = dout * gamma
     dvar = Sumk(dx_norm * (x - mean) * -1/2 * (var + eps)**(-3/2))
     dmean = Sumk(dx_norm * -1 / (var + eps)**(1/2)) + dvar * Sumk(-2*(x-mean))/x.shape[0]
@@ -361,8 +346,17 @@ def batchnorm_backward_alt(dout, cache):
     
     dx_norm = dout * gamma / (len(dout) * std) 
     dx = len(dout) * dx_norm - np.sum(dx_norm * x_norm, axis=0) * x_norm - np.sum(dx_norm, axis=0)
-    pass
-
+    # pass
+    
+    
+    # gamma, beta, x, x_norm, mean, var, std, eps = cache
+    # dgamma = np.sum(dout * x_norm, axis=0)
+    # dbeta = np.sum(dout, axis=0)
+    # Sumk = lambda x: np.sum(x,axis=0)
+    # dx_norm = dout * gamma
+    # dx = dx_norm / std +    Sumk(dx_norm * (x - mean)) * ( -1 * std**-3 *(x-mean) + Sumk((x-mean)) * std**-3 / x.shape[0] ) /x.shape[0] +  Sumk(dx_norm) * -1 / std / x.shape[0] 
+    
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -622,6 +616,24 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    N ,C ,H, W= x.shape
+    F, C, HH, WW = w.shape
+    stride = conv_param.get('stride',1)
+    pad = conv_param.get('pad',0)
+    H_ = 1 + int((H + 2 * pad - HH) / stride)
+    W_ = 1 + int((W + 2 * pad - WW) / stride)
+    x_pad = np.pad(x,((0, 0), (0, 0), (pad, pad), (pad, pad)))
+    out = np.zeros((N, F, H_, W_))
+    w_row = w.reshape(F, -1)
+    x_col = np.zeros((C*HH*WW,H_*W_))
+    for f in range(N):
+      temp = 0
+      for h_ in range(0, (H_-1)*stride+1, stride):
+        for w_ in range(0, (H_-1)*stride+1, stride):
+          x_col[:,temp] = x_pad[f, :, h_:h_+HH, w_:w_+WW].reshape(-1)
+          temp += 1
+      out[f] = (np.dot(w_row, x_col) + b.reshape(-1,1)).reshape(F,H_,W_)
+    x = x_pad
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -650,6 +662,28 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    x, w, b, conv_param = cache
+    stride = conv_param.get('stride',1)
+    pad = conv_param.get('pad',0)
+    N ,C ,H_, W_ = dout.shape
+    F, C, HH, WW = w.shape
+    dx, dw, db = np.zeros_like(x), np.zeros_like(w), np.zeros_like(b)
+    
+    w_row = w.reshape(F, -1)
+    x_col = np.zeros((C*HH*WW,H_*W_))
+    for f in range(N):
+      d_out = dout[f].reshape(F,-1)
+      db += np.sum(d_out,axis=1)
+      dz = np.dot(w_row.T,d_out)
+      temp = 0
+      for h_ in range(0, (H_-1)*stride+1, stride):
+        for w_ in range(0, (H_-1)*stride+1, stride):
+          x_col[:,temp] = x[f, :, h_:h_+HH, w_:w_+WW].reshape(-1)
+          dx[f, :, h_:h_+HH, w_:w_+WW] += dz[:,temp].reshape((C, HH, WW))
+          temp += 1
+      dw += np.dot(d_out,x_col.T).reshape(F,C, HH, WW)
+    dx = dx[:,:,pad:-pad,pad:-pad]
+    
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -685,6 +719,17 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    N, C, H, W = x.shape
+    pool_height = pool_param.get('pool_height',2)
+    pool_width = pool_param.get('pool_width',2)
+    stride = pool_param.get('stride',2)
+    H_ = 1 + int((H - pool_height) / stride)
+    W_ = 1 + int((W - pool_width) / stride)
+    out = np.zeros((N,C,H_,W_))
+    for h in range(H_):
+      for w in range(W_):
+        out[:,:,h,w] = np.max(x[:,:, stride*h:stride*h+pool_height, stride*w:stride*w+pool_width],axis=(2,3))
+    
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -711,6 +756,23 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    x, pool_param = cache
+    N, C, H_, W_ = dout.shape
+    pool_height = pool_param.get('pool_height',2)
+    pool_width = pool_param.get('pool_width',2)
+    stride = pool_param.get('stride',2)
+    
+    dx = np.zeros_like(x)
+    for h in range(H_):
+      for w in range(W_):
+        x_catch = x[:,:, stride*h:stride*h+pool_height, stride*w:stride*w+pool_width]
+        x_max = np.max(x[:,:, stride*h:stride*h+pool_height, stride*w:stride*w+pool_width],axis=(2,3))
+        x_catch -= np.tile(x_max[:, :, np.newaxis, np.newaxis], (1, 1, pool_height, pool_width))
+        x_catch[x_catch==0] = 1 
+        x_catch[x_catch<0] = 0
+        x_catch *= np.tile(dout[:,:,h,w][:, :, np.newaxis, np.newaxis], (1, 1, pool_height, pool_width))
+        dx[:,:, stride*h:stride*h+pool_height, stride*w:stride*w+pool_width] = x_catch
+        
     pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****

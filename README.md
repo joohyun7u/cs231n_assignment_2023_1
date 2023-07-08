@@ -6,12 +6,12 @@
     softmax.ipynb | Complete
     two_layer_net.ipynb | Complete
     features.ipynb | Complete
-### - Assignment2
+### - Assignment2 | Complete
     FullyConnectedNets.ipynb | Complete
     BatchNormalization.ipynb | Complete
     Dropout.ipynb | Complete | Complete
-    ConvolutionalNetworks.ipynb
-    PyTorch.ipynb
+    ConvolutionalNetworks.ipynb | Complete
+    PyTorch.ipynb | Complete
 ### - Assignment3
     Network_Visualization.ipynb
     RNN_Captioning.ipynb

@@ -13,7 +13,7 @@
     ConvolutionalNetworks.ipynb | Complete
     PyTorch.ipynb | Complete
 ### - Assignment3
-    Network_Visualization.ipynb
+    Network_Visualization.ipynb | Complete
     RNN_Captioning.ipynb
     Transformer_Captioning.ipynb
     Generative_Adversarial_Networks.ipynb

@@ -14,7 +14,7 @@
     PyTorch.ipynb | Complete
 ### - Assignment3
     Network_Visualization.ipynb | Complete
-    RNN_Captioning.ipynb
+    RNN_Captioning.ipynb | Complete
     Transformer_Captioning.ipynb
     Generative_Adversarial_Networks.ipynb
     Self_Supervised_Learning.ipynb

@@ -18,4 +18,4 @@
     Transformer_Captioning.ipynb
     Generative_Adversarial_Networks.ipynb
     Self_Supervised_Learning.ipynb
-    LSTM_Captioning.ipynb
+    LSTM_Captioning.ipynb | Complete

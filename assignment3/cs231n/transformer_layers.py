@@ -185,7 +185,6 @@ class MultiHeadAttention(nn.Module):
         output = self.proj(y.transpose(1,2).reshape(N,S,self.emd_dim))
         pass
 
-
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #

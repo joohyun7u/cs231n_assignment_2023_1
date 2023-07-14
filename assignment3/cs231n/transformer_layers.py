@@ -37,7 +37,10 @@ class PositionalEncoding(nn.Module):
         # less than 5 lines of code.                                               #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        
+        for j in range(embed_dim):
+          for i in range(max_len):
+            pe[0,i,j] = math.sin(i*10000**(-j/embed_dim)) if j%2 == 0 else math.cos(i*10000**(-(j-1)/embed_dim))
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -70,6 +73,8 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        output = x + self.pe[:,:S,:]
+        output = self.dropout(output)
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -164,8 +169,22 @@ class MultiHeadAttention(nn.Module):
         #     function masked_fill may come in handy.                              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        
+        H = self.n_head
+        key_v = self.key(key).reshape(N,T,H,self.head_dim).transpose(1,2) # (N,T,H,E/H) -> (N,H,T,E/H)
+        query_v = self.query(query).reshape(N,S,H,self.head_dim).transpose(1,2) # (N,S,H,E/H) -> (N,H,S,E/H)
+        value_v = self.value(value).reshape(N,T,H,self.head_dim).transpose(1,2) # (N,T,H,E/H) -> (N,H,T,E/H)
+        
+        e = torch.matmul(query_v, key_v.transpose(2,3)) / math.sqrt(self.head_dim)  # (N,H,S,E/H) @ (N,H,E/H,T) = (N,H,S,T)
+        # e = query_v.matmul(key_v.transpose(2,3)) / math.sqrt(self.head_dim)  # (N,H,S,E/H) @ (N,H,E/H,T) = (N,H,S,T)
+        if attn_mask != None:
+          e = torch.masked_fill(e, attn_mask==0, -math.inf)
+        a = nn.Softmax(dim=-1)(e)
+        a = self.attn_drop(a)
+        y = torch.matmul(a,value_v) # (N,H,S,T) @ (N,H,T,E/H) = (N,H,S,E/H)
+        output = self.proj(y.transpose(1,2).reshape(N,S,self.emd_dim))
         pass
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

@@ -15,7 +15,7 @@
 ### - Assignment3
     Network_Visualization.ipynb | Complete
     RNN_Captioning.ipynb | Complete
-    Transformer_Captioning.ipynb
+    Transformer_Captioning.ipynb | Complete
     Generative_Adversarial_Networks.ipynb | Complete
     Self_Supervised_Learning.ipynb
     LSTM_Captioning.ipynb | Complete

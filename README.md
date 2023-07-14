@@ -12,10 +12,10 @@
     Dropout.ipynb | Complete | Complete
     ConvolutionalNetworks.ipynb | Complete
     PyTorch.ipynb | Complete
-### - Assignment3
+### - Assignment3 | Complete
     Network_Visualization.ipynb | Complete
     RNN_Captioning.ipynb | Complete
     Transformer_Captioning.ipynb | Complete
     Generative_Adversarial_Networks.ipynb | Complete
-    Self_Supervised_Learning.ipynb
+    Self_Supervised_Learning.ipynb | Complete
     LSTM_Captioning.ipynb | Complete
